@@ -40,6 +40,15 @@ class whetherLikeOrDislike{
     }
 }
 
+class userBlog{
+    constructor(obj){
+        this.blogIds=obj.blogIds;
+    }
+    toString(){
+        return JSON.stringify(this);        
+    }
+}
+
 class Bynorth{
     constructor(){
         LocalContractStorage.defineProperty(this,'blogCount',null)
@@ -70,6 +79,15 @@ class Bynorth{
                 return o.toString();
             }
         });
+        LocalContractStorage.defineMapProperty(this,'userBlog',{
+            parse: function (text) {
+                let obj=JSON.parse(text);
+                return new userBlog(obj);
+            },
+            stringify: function (o) {
+                return o.toString();
+            }
+        })
     }
     init(){
         this.blogCount = 0;
@@ -93,8 +111,17 @@ class Bynorth{
             'like': 0,          //like數
             'dislike': 0,        //dislike數
             'delete': false
-        })
+        });
+        let user=this.userBlog.get(hash);
+        if(!user){
+            user=new userBlog({
+                'blogIds':[blogId]
+            });
+        }else{
+            user.blogIds.push(blogId);
+        }
         this.blog.put(blogId,newBlog);
+        this.userBlog.put(hash,user);
         var r={
             'time': time,
             'blogId': blogId
@@ -156,46 +183,141 @@ class Bynorth{
         let end = b.messageCount;
         let arr=new Array();
         for(let i=begin;i<end;i++){
-            let m=this.message.get(blogId+'-'+i);
+            let messageId=blogId+'-'+i;
+            let m=this.message.get(messageId);
+            m.messageId=messageId;
             if(!m.delete)
                 arr.push(m);
         }
         return arr;
     }
     
-    // blogLikeDislike(hash,blogId,likeDislike){
-    //     let b=this.blog.get(blogId);
-    //     if(!b)
-    //         return {'error':0};
-    //     // if(!Blockchain.verifyAddress(hash))
-    //     //     return {'error':1};
-    //     let userStatusId=blogId+'+'+hash;
-    //     let userStatus=this.likeOrDislike.get(userStatusId);
-    //     if(!userStatus){
-    //         userStatus = new whetherLikeOrDislike({
-    //             'status':likeDislike?2:1    ////0(無) or 1(踩) or 2(讚)
-    //         })
-    //         likeDislike? b.like+=1 : b.dislike+=1;
-    //         this.likeOrDislike.set(userStatusId,userStatus);
-    //     }
-    //     else{
-    //         if(likeDislike && userStatus.status===2){
-    //             userStatus.status=0;
-    //             b.like-=1;
-    //         }
-    //         else if(!likeDislike && userStatus.status===1){
-    //             userStatus.status=0;
-    //             b.dislike-=1;                
-    //         }
-    //         else{
-    //             userStatus.status=likeDislike?2:1;
-    //             likeDislike? b.like+=1 : b.dislike+=1;
-    //         }
-    //         this.likeOrDislike.set(userStatusId,userStatus);
-    //     }
-    //     this.blog.set(blogId,b);
-    //     console.log(userStatus);
-    //     return true;
-    // }
+    blogLikeDislike(hash,blogId,likeDislike){
+        let b=this.blog.get(blogId);
+        if(!b)
+            return {'error':0};
+        // if(!Blockchain.verifyAddress(hash))
+        //     return {'error':1};
+        let userStatusId=blogId+'+'+hash;
+        let userStatus=this.likeOrDislike.get(userStatusId);
+        if(!userStatus){
+            let st;
+            if (likeDislike) {
+                st = 2;
+            } else {
+                st = 1;
+            }   
+            userStatus = new whetherLikeOrDislike({
+                'status': st
+            });
+            if (likeDislike) {
+                b.like += 1;
+            } else {
+                b.dislike += 1;  
+            } 
+            this.likeOrDislike.set(userStatusId,userStatus);
+        }
+        else{
+            if(likeDislike && userStatus.status===2){
+                userStatus.status=0;
+                b.like-=1;
+            }
+            else if(!likeDislike && userStatus.status===1){
+                userStatus.status=0;
+                b.dislike-=1;                
+            }
+            else{
+                if (likeDislike) {
+                    if(userStatus.status!==0)
+                        b.dislike -= 1;
+                    b.like += 1;
+                    userStatus.status = 2;
+                } else {
+                    if(userStatus.status!==0)
+                        b.like -= 1;
+                    b.dislike += 1;  
+                    userStatus.status = 1;
+                }
+                // userStatus.status=likeDislike?2:1;
+            }
+            this.likeOrDislike.set(userStatusId,userStatus);
+        }
+        this.blog.set(blogId,b);
+        console.log(userStatus);
+        return true;
+    }
+    messageLikeDislike(hash,messageID,likeDislike){
+        let b=this.message.get(messageID);
+        if(!b)
+            return {'error':0};
+        // if(!Blockchain.verifyAddress(hash))
+        //     return {'error':1};
+        let userStatusId=messageID+'+'+hash;
+        let userStatus=this.likeOrDislike.get(userStatusId);
+        if(!userStatus){
+            let st;
+            if (likeDislike) {
+                st = 2;
+            } else {
+                st = 1;
+            }   
+            userStatus = new whetherLikeOrDislike({
+                'status': st
+            });
+            if (likeDislike) {
+                b.like += 1;
+            } else {
+                b.dislike += 1;  
+            } 
+            this.likeOrDislike.set(userStatusId,userStatus);
+        }
+        else{
+            if(likeDislike && userStatus.status===2){
+                userStatus.status=0;
+                b.like-=1;
+            }
+            else if(!likeDislike && userStatus.status===1){
+                userStatus.status=0;
+                b.dislike-=1;                
+            }
+            else{
+                if (likeDislike) {
+                    if(userStatus.status!==0)
+                        b.dislike -= 1;
+                    b.like += 1;
+                    userStatus.status = 2;
+                } else {
+                    if(userStatus.status!==0)
+                        b.like -= 1;
+                    b.dislike += 1;  
+                    userStatus.status = 1;
+                }
+                // userStatus.status=likeDislike?2:1;
+            }
+            this.likeOrDislike.set(userStatusId,userStatus);
+        }
+        this.message.set(messageID,b);
+        console.log(userStatus);
+        return true;
+    }
+    get_authorBlog(hash){
+        // if(!Blockchain.verifyAddress(hash))
+        //     return {'error':1};
+        let user=this.userBlog.get(hash);
+        console.log(user);
+        let arr= new Array();
+        for(let i=0;i<user.blogIds.length;i++){
+            let b=this.blog.get(user.blogIds[i]);
+            b.blogId=user.blogIds[i];
+            if(!b.delete)
+                arr.push(b);
+        }
+        return arr;
+    }
+    get_like(id,hash){
+        let userStatusId=id+'+'+hash;
+        let userStatus=this.likeOrDislike.get(userStatusId);
+        return userStatus.status;
+    }
 }
 module.exports = Bynorth;

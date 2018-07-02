@@ -27,16 +27,51 @@ $(document).ready(() => {
         }
     })
 
+    // $("#latest_btn").click(() => {
+    //     $("#latest-section").css({"display":""});
+    //     $("#hot-section").css({"display":"none"});
+    //     $("#myblog-section").css({"display":"none"});
+    //     $("#latest-section").html("");
+    //     $("#hot-section").html("");
+    //     $("#myblog-section").html("");
+    //     $("#latest_btn").parents("li").removeClass("active");
+    //     $("#HOT_btn").parents("li").addClass("active");
+    //     $("#myBlog_btn").parents("li").addClass("active");
+    //     initLatest();
+    // });
+    // $("#HOT_btn").click(() => {
+    //     $("#latest-section").css({"display":"none"});
+    //     $("#hot-section").css({"display":""});
+    //     $("#myblog-section").css({"display":"none"});
+    //     $("#latest-section").html("");
+    //     $("#hot-section").html("");
+    //     $("#myblog-section").html("");
+    //     $("#latest_btn").parents("li").addClass("active");
+    //     $("#HOT_btn").parents("li").removeClass("active");
+    //     $("#myBlog_btn").parents("li").addClass("active");
+    //     initHot();
+    // })
+    // $("#myBlog_btn").click(() => {
+    //     $("#latest-section").css({"display":"none"});
+    //     $("#hot-section").css({"display":"none"});
+    //     $("#myblog-section").css({"display":""});
+    //     $("#latest-section").html("");
+    //     $("#hot-section").html("");
+    //     $("#myblog-section").html("");
+    //     $("#latest_btn").parents("li").addClass("active");
+    //     $("#HOT_btn").parents("li").addClass("active");
+    //     $("#myBlog_btn").parents("li").removeClass("active");
+    //     initMyBlog();
+    // })
+
     postBlog = function() {
         var nickname = $("#submit-nickname").val();
         var content = $("#submit-content").val();
         var callArgs = [
             content,
-            userAddrerss,
+            userAddress,
             nickname
         ]
-
-        // console.log(callArgs)
 
         if (content !== '') {
             addPost(JSON.stringify(callArgs));
@@ -47,14 +82,25 @@ $(document).ready(() => {
         var callArgs = [
             blogID,
             content,
-            userAddrerss,
+            userAddress,
             nickname
-        ];
+        ]
 
-        addMessage(JSON.stringify(callArgs));
-    
+        if (content !== '') {
+            addMessage(JSON.stringify(callArgs), blogID);
+        }
     }
 
-    initLatest()
-  
+    postLikeDislike = function(userAddress, blogID, likeOrDislike) {
+        var callArgs = [
+            userAddress,
+            blogID,
+            likeOrDislike
+        ]
+    
+        addLikeDislike(JSON.stringify(callArgs));
+    }
+
+    initLatest();
+    checkRefreash();
 });

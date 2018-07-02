@@ -1,5 +1,3 @@
-// require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-
 "use strict";
 
 var Nebulas = require("nebulas");
@@ -8,17 +6,19 @@ var NebPay = require("nebpay");
 var neb = new Nebulas.Neb();
 var api = neb.api;
 var nebPay = new NebPay();
-var userAddrerss;
+var userAddress;
+var txHash;
 
-neb.setRequest(new Nebulas.HttpRequest("https://testnet.nebulas.io"));
+neb.setRequest(new Nebulas.HttpRequest("https://mainnet.nebulas.io"));
+// neb.setRequest(new Nebulas.HttpRequest("https://testnet.nebulas.io"));
 // neb.setRequest(new Nebulas.HttpRequest("http://localhost:8685"));      // 本地節點測試
+var dappAddress = "n1poxoXLWkefENggX1ggUQn4mBN3bLyHu9G";    // 主網合約地址
+// var dappAddress = 'n1ovn4GPda3qnbk8AHXtvWWpwLkscttudzz'; // 測試網合約地址
 
-// var dappAddress = 'n1eM7UXtVosJF7S6ht9q6Mrh8Wftkm4X7wy';   // 合約地址
-var dappAddress = 'n1ovn4GPda3qnbk8AHXtvWWpwLkscttudzz'; // 合約地址
-var testUser = 'n1SZdYuB9kd6kpLBaCgxrPrV29175st5NVD';
 var serialNumber; //交易序列号
 var intervalQuery; //periodically query tx results
 
+var newestDate;
 var latestBlogsData;
 var hotBlogsData;
 var weeklyBlogData;
@@ -46,6 +46,36 @@ function test() {
         console.log(resp);
         //code
     });
+}
+
+function checkRefreash() {
+    intervalQuery = setInterval(function() {
+        api.call({
+            chainID: 1,
+            from: dappAddress,
+            to: dappAddress,
+            value: 0,
+            nonce: 1,
+            gasPrice: 1000000,
+            gasLimit: 2000000,
+            contract: {
+                function: "getPost",
+                args: '[0]'
+            }
+        }).then(function (resp) {
+            if (JSON.parse(latestBlogsData) !== JSON.parse(resp.result)) {
+                $.notify({
+                    message: "Website has new post.Please click HERE to check out!",
+                    url: "http://0522andrew.github.io/Complain_forum/",
+                    target: "_self" 
+                }, {
+                    type: "info",
+                    delay: 5000,
+                    z_index: 9999
+                });
+            }
+        });
+    }, 15000); 
 }
 
 function getBlog(option) {
@@ -80,14 +110,28 @@ function getComment(option) {
             args: JSON.stringify([option])
         }
     }).then(function (resp) {
-        console.log(resp);
+        // console.log(resp);
         let data = JSON.parse(resp.result);
-        let insert = "";
-        for(let i = 0;i< data.length;i++){
-            insert += '<tr><td class="message-align table-secondary">'+data[i].name+'</td><td class="bg-light">'+data[i].content+'</td></tr>';
-        }
-        console.log(insert);
-        $('<table/ class="table table-bordered table-sm">').text(insert).appendTo("#message-section-"+option);
+        let table = $('<table/ class="table table-bordered table-sm">');
+        if (data.length >= 0){
+            for(let i = 0;i< data.length;i++){
+                let comment_row = $('<tr/>')
+                let comment_col_1 = data[i].name ? $('<td/ class="message-align table-secondary">').text(data[i].name) : $('<td/ class="message-align table-secondary" style="color: orange;">').text("Anonymous");
+                let comment_col_2 = $('<td/ class="bg-light">').text(data[i].content);
+                comment_col_1.appendTo(comment_row);
+                comment_col_2.appendTo(comment_row);
+                comment_row.appendTo(table);
+            }
+            if ($("#message-section-"+option).html() === ""){
+                table.appendTo("#message-section-"+option);
+                // setTimeout(function(){
+                $("#slideDownSection"+option).velocity("stop")
+                $("#slideDownSection"+option).velocity("slideDown",500);
+                $("#slideDownSection"+option).css({"overflow":""})
+                // },1000)
+                console.log("ff");
+            }
+        }    
     });
 }
 
@@ -109,7 +153,10 @@ function initLatest() {
         if (resp.result === "") {
             //initLatest();
         } else {
+            // newestdata = resp.result;
+            // console.log(latestBlogsData)
             latestBlogsData = resp.result;
+        
             //$("#latest-section").append()
             let data = JSON.parse(resp.result);
             for (let i = 0; i < data.length; i++) {
@@ -120,10 +167,15 @@ function initLatest() {
                     $('<p/ class="author">').text(data[i].name).appendTo("#blog-"+data[i].blogId);
                 }
                 $('<p/ class="content">').text(data[i].content).appendTo("#blog-"+data[i].blogId);
-                $("#blog-"+data[i].blogId).append('<div class="info-section"><b class="thumb-up-pre">👍🏿</b><b class="like-count">'+data[i].like+'</b><b class="thumb-down-pre">👎🏿</b><b class="dislike-count">'+data[i].dislike+'</b><img class="message-img message-btn" src="image/speech-bubble.png" blogId="'+data[i].blogId+'"><b class="message-count">'+data[i].messageCount+'</b></div>')
-                $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
-                $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>')
-                $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
+                $("#blog-"+data[i].blogId).append('<div class="info-section"><b class="thumb-up-pre" onClick="postLikeDislike(userAddress, '+"'"+data[i].blogId+"'"+', true)">👍🏿</b><b class="like-count">'+data[i].like+'</b><b class="thumb-down-pre" onClick="postLikeDislike(userAddress, '+"'"+data[i].blogId+"'"+', false)">👎🏿</b><b class="dislike-count">'+data[i].dislike+'</b><img class="message-img message-btn" src="image/speech-bubble.png" blogId="'+data[i].blogId+'"><b class="message-count">'+data[i].messageCount+'</b></div>')
+                let slideDownSection = $('<div/ id="slideDownSection'+data[i].blogId+'" style="display:none;">');
+                $('<hr class="divide-line">').appendTo(slideDownSection);
+                $('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>').appendTo(slideDownSection);
+                $('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value, this)">send</button></div></div>').appendTo(slideDownSection);
+                slideDownSection.appendTo($("#blog-"+data[i].blogId));
+                // $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
+                // $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'" style="display:none;"></div>')
+                // $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
             }
             $(".thumb-up-pre").hover((event) => {
                 event.currentTarget.textContent = "👍";
@@ -136,17 +188,156 @@ function initLatest() {
             }, (event) => {
                 event.currentTarget.textContent = "👎🏿";
             });
-
+        
             $(document).on("click", ".message-btn" , function(){
-                getComment($(this).attr("blogId"))
+                if ($("#message-section-"+$(this).attr("blogId")).html() === ""){
+                    getComment($(this).attr("blogId"));
+                } else {
+                    $("#slideDownSection"+$(this).attr("blogId")).velocity("slideUp",500);
+                    $("#slideDownSection"+$(this).attr("blogId")).css({"overflow":""})
+                    $("#message-section-"+$(this).attr("blogId")).html("");
+                }
+            })
+        }
+    });
+}
+
+function initHot() {
+    api.call({
+        chainID: 1,
+        from: dappAddress,
+        to: dappAddress,
+        value: 0,
+        nonce: 1,
+        gasPrice: 1000000,
+        gasLimit: 2000000,
+        contract: {
+            function: "getPost",
+            args: JSON.stringify([0])
+        }
+    }).then(function (resp) {
+        //console.log(resp);
+        if (resp.result === "") {
+            //initLatest();
+        } else {
+            // newestdata = resp.result;
+            // console.log(latestBlogsData)
+            latestBlogsData = resp.result;
+        
+            //$("#latest-section").append()
+            let data = JSON.parse(resp.result);
+            for (let i = 0; i < data.length; i++) {
+                $("#hot-section").append('<div class="blog" id="blog-'+data[i].blogId+'">');
+                if (data[i].name === ""){
+                    $('<p/ class="author" style="color: orange;">').text("Anonymous").appendTo("#blog-"+data[i].blogId);
+                }else{
+                    $('<p/ class="author">').text(data[i].name).appendTo("#blog-"+data[i].blogId);
+                }
+                $('<p/ class="content">').text(data[i].content).appendTo("#blog-"+data[i].blogId);
+                $("#blog-"+data[i].blogId).append('<div class="info-section"><b class="thumb-up-pre" onClick="postLikeDislike(userAddress, '+"'"+data[i].blogId+"'"+', true)">👍🏿</b><b class="like-count">'+data[i].like+'</b><b class="thumb-down-pre" onClick="postLikeDislike(userAddress, '+"'"+data[i].blogId+"'"+', false)">👎🏿</b><b class="dislike-count">'+data[i].dislike+'</b><img class="message-img message-btn" src="image/speech-bubble.png" blogId="'+data[i].blogId+'"><b class="message-count">'+data[i].messageCount+'</b></div>')
+                let slideDownSection = $('<div/ id="slideDownSection'+data[i].blogId+'" style="display:none;">');
+                $('<hr class="divide-line">').appendTo(slideDownSection);
+                $('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>').appendTo(slideDownSection);
+                $('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value, this)">send</button></div></div>').appendTo(slideDownSection);
+                slideDownSection.appendTo($("#blog-"+data[i].blogId));
+                // $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
+                // $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'" style="display:none;"></div>')
+                // $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
+            }
+            $(".thumb-up-pre").hover((event) => {
+                event.currentTarget.textContent = "👍";
+            }, (event) => {
+                event.currentTarget.textContent = "👍🏿";
+            });
+        
+            $(".thumb-down-pre").hover((event) => {
+                event.currentTarget.textContent = "👎";
+            }, (event) => {
+                event.currentTarget.textContent = "👎🏿";
+            });
+        
+            $(document).on("click", ".message-btn" , function(){
+                if ($("#message-section-"+$(this).attr("blogId")).html() === ""){
+                    getComment($(this).attr("blogId"));
+                } else {
+                    $("#slideDownSection"+$(this).attr("blogId")).velocity("slideUp",500);
+                    $("#slideDownSection"+$(this).attr("blogId")).css({"overflow":""})
+                    $("#message-section-"+$(this).attr("blogId")).html("");
+                }
+            })
+        }
+    });
+}
+
+function initMyBlog() {
+    api.call({
+        chainID: 1,
+        from: dappAddress,
+        to: dappAddress,
+        value: 0,
+        nonce: 1,
+        gasPrice: 1000000,
+        gasLimit: 2000000,
+        contract: {
+            function: "get_authorBlog",
+            args: JSON.stringify([userAddress])
+        }
+    }).then(function (resp) {
+        //console.log(resp);
+        if (resp.result === "") {
+            //initLatest();
+        } else {
+            // newestdata = resp.result;
+            // console.log(latestBlogsData)
+            latestBlogsData = resp.result;
+        
+            //$("#latest-section").append()
+            let data = JSON.parse(resp.result);
+            for (let i = 0; i < data.length; i++) {
+                $("#myblog-section").append('<div class="blog" id="blog-'+data[i].blogId+'">');
+                if (data[i].name === ""){
+                    $('<p/ class="author" style="color: orange;">').text("Anonymous").appendTo("#blog-"+data[i].blogId);
+                }else{
+                    $('<p/ class="author">').text(data[i].name).appendTo("#blog-"+data[i].blogId);
+                }
+                $('<p/ class="content">').text(data[i].content).appendTo("#blog-"+data[i].blogId);
+                $("#blog-"+data[i].blogId).append('<div class="info-section"><b class="thumb-up-pre" onClick="postLikeDislike(userAddress, '+"'"+data[i].blogId+"'"+', true)">👍🏿</b><b class="like-count">'+data[i].like+'</b><b class="thumb-down-pre" onClick="postLikeDislike(userAddress, '+"'"+data[i].blogId+"'"+', false)">👎🏿</b><b class="dislike-count">'+data[i].dislike+'</b><img class="message-img message-btn" src="image/speech-bubble.png" blogId="'+data[i].blogId+'"><b class="message-count">'+data[i].messageCount+'</b></div>')
+                let slideDownSection = $('<div/ id="slideDownSection'+data[i].blogId+'" style="display:none;">');
+                $('<hr class="divide-line">').appendTo(slideDownSection);
+                $('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>').appendTo(slideDownSection);
+                $('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value, this)">send</button></div></div>').appendTo(slideDownSection);
+                slideDownSection.appendTo($("#blog-"+data[i].blogId));
+                // $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
+                // $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'" style="display:none;"></div>')
+                // $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
+            }
+            $(".thumb-up-pre").hover((event) => {
+                event.currentTarget.textContent = "👍";
+            }, (event) => {
+                event.currentTarget.textContent = "👍🏿";
+            });
+        
+            $(".thumb-down-pre").hover((event) => {
+                event.currentTarget.textContent = "👎";
+            }, (event) => {
+                event.currentTarget.textContent = "👎🏿";
+            });
+        
+            $(document).on("click", ".message-btn" , function(){
+                if ($("#message-section-"+$(this).attr("blogId")).html() === ""){
+                    getComment($(this).attr("blogId"));
+                } else {
+                    $("#slideDownSection"+$(this).attr("blogId")).velocity("slideUp",500);
+                    $("#slideDownSection"+$(this).attr("blogId")).css({"overflow":""})
+                    $("#message-section-"+$(this).attr("blogId")).html("");
+                }
             })
         }
     });
 }
 
 var options = {
-    callback: NebPay.config.testnetUrl,   //交易查询服务器地址
-    listener: listenerFunction, //为浏览器插件指定listener,处理交易返回结果
+    callback: "https://pay.nebulas.io/api/mainnet/pay",
     qrcode: {
 		showQRCode: false,      //是否显示二维码信息
 		container: undefined,    //指定显示二维码的canvas容器，不指定则生成一个默认canvas
@@ -157,102 +348,85 @@ var options = {
 
 // nebpay call addPost
 function addPost(callArgs) {
+    var count = 0
     var to = dappAddress;
     var value = 0;
     var callFunction = "addPost";
    
     serialNumber =  nebPay.call(to, value, callFunction, callArgs, options) 
-
-    nebPay.queryPayInfo(serialNumber, options).then()
-    // var options = {callback: NebPay.config.testnetUrl}
-    // nebPay.queryPayInfo(serialNumber, options) //search transaction result from server (result upload to server by app)
-    //     .then(function (resp) {
-    //         console.log(resp)
-    //     })
-    //     .catch(function (err) {
-    //         console.log(err);
-    //     });
+    intervalQuery = setInterval(function() {
+        api.getTransactionReceipt({
+            hash: txHash
+        }).then(function(receipt) {
+            checkStatus(receipt, count);
+            if (receipt.status == 1) {
+                $("#add_blog_model").modal('hide');
+                $("#add_blog_model .form-control").val("");
+            }
+            count += 1;
+        });
+    }, 5000);  
 }
 
-function addMessage(callArgs) {
+function addMessage(callArgs, blogID) {
+    var count = 0
     var to = dappAddress;
     var value = 0;
     var callFunction = "addMessage";
     serialNumber =  nebPay.call(to, value, callFunction, callArgs, options); 
-
-    nebPay.queryPayInfo(serialNumber, options).then()
-
-     intervalQuery = setInterval(function() {
-            funcIntervalQuery();
-        }, 10000); //it's recommended that the query frequency is between 10-15s.
-
-}
-//Query the result of the transaction. queryPayInfo returns a Promise object.
-function funcIntervalQuery() {   
-    nebPay.queryPayInfo(serialNumber)   //search transaction result from server (result upload to server by app)
-        .then(function (resp) {
-            console.log("tx result: " + resp)   //resp is a JSON string
-            var respObject = JSON.parse(resp)
-            if(respObject.code === 0){
-                //The transaction is successful 
-                
-                clearInterval(intervalQuery)    //stop the periodically query 
+    
+    intervalQuery = setInterval(function() {
+        api.getTransactionReceipt({
+            hash: txHash
+        }).then(function(receipt) {
+            checkStatus(receipt, count);
+            if (receipt.status == 1) {
+                $("#slideDownSection" + blogID + " .form-control.message-content").val("");
             }
-        })
-        .catch(function (err) {
-            console.log(err);
+            count += 1;
+           
         });
+    }, 5000); 
 }
 
-
-function listenerFunction(serialNumber,result){
-    console.log(`交易結果： ${serialNumber} is: ` + JSON.stringify(result))
+function addLikeDislike(callArgs) {
+    var count = 0
+    var to = dappAddress;
+    var value = 0;
+    var callFunction = "blogLikeDislike";
+   
+    serialNumber =  nebPay.call(to, value, callFunction, callArgs, options) 
+    
+    intervalQuery = setInterval(function() {
+        api.getTransactionReceipt({
+            hash: txHash
+        }).then(function(receipt) {
+            checkStatus(receipt, count);
+            count += 1;
+        });
+    }, 5000); 
 }
 
-function checkStatus(resp) {
-    console.log("监听");
-    if (resp == "Error: Transaction rejected by user"){
-        console.log(resp);
-        alert("初始化取消！");
-        return false;
-    } else {
-        console.log(resp);
-        console.log("已提交区块链网络，请等待写入区块链！");
-        checkPayStatus(resp.txhash);
+function checkStatus(receipt, count) {
+    if (receipt.status == 2 && count == 0) {              // fail
+        $.notify({
+            message:"Submitting, please wait."
+        }, {
+            type: "info",
+            delay: 17000,
+            z_index: 9999
+        });
+    } else if (receipt.status == 1) {       // success
+        $.notify({
+            message:"Submit success！"
+        }, {
+            type: "success",
+            delay: 4000,
+            z_index: 9999
+        });
+
+        clearInterval(intervalQuery);
     }
-}
-
-
-function checkPayStatus(txhash) {
-    console.log("checkpaystatas "+txhash);
-
-    // $(".add_human_detail").hide();
-    // $(".show_human_detail").hide();
-    // $(".loading_div").show();
-    $.notify("Querying, please wait.")
-    var timerId = setInterval(function(){
-        nasApi.getTransactionReceipt({
-            hash:txhash
-        }).then(function(receipt){
-            console.log("checkPayStatus");
-            if(receipt.status == 1){
-                clearInterval(timerId);
-                var res = receipt.execute_result;
-                console.log("test success return="+res);
-
-                getBlog();
-
-            }else if(receipt.status == 0){
-                clearInterval(timerId);
-                console.log("test fail err="+receipt.execute_error);
-                alert("失败，请再次尝试！");
-
-                getBlog();
-            }
-        }).catch(function(err){
-            console.log("test error");
-        });
-    },3*1000);
 }
 
 // 獲取用戶地址
@@ -270,7 +444,10 @@ window.addEventListener('message', function (e) {
     // e.detail contains the transferred data (can
     console.log("recived by page:" + e + ", e.data:" + JSON.stringify(e.data));
     if (!!e.data.data && !!e.data.data.account) {
-        userAddrerss = e.data.data.account;
+        userAddress = e.data.data.account;
+    }
+    if (!!e.data.resp && !!e.data.resp.txhash) {
+        txHash = e.data.resp.txhash;
     }
 })
 getUserAddress()
