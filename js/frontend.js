@@ -14,8 +14,8 @@ neb.setRequest(new Nebulas.HttpRequest("https://mainnet.nebulas.io"));
 // neb.setRequest(new Nebulas.HttpRequest("http://localhost:8685"));      // 本地節點測試
 // var dappAddress = "n1poxoXLWkefENggX1ggUQn4mBN3bLyHu9G";    // 主網合約地址1
 // var dappAddress = "n1kjRFsZek9jWrQZ8fD8KcoDkVm7ZE7oXC2";    // 主網合約地址2
-// var dappAddress = 'n1ovn4GPda3qnbk8AHXtvWWpwLkscttudzz'; // 測試網合約地址
-var dappAddress = 'n1rJrY2WBkXEksQ8bq4doZoAhVzuvLbexYj'; // 測試網合約地址
+var dappAddress = 'n1ovn4GPda3qnbk8AHXtvWWpwLkscttudzz'; // 測試網合約地址
+// var dappAddress = 'n1rJrY2WBkXEksQ8bq4doZoAhVzuvLbexYj'; // 測試網合約地址
 
 var serialNumber; //交易序列号
 var intervalQuery; //periodically query tx results
@@ -175,9 +175,6 @@ function initLatest() {
                 $('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>').appendTo(slideDownSection);
                 $('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value, this)">send</button></div></div>').appendTo(slideDownSection);
                 slideDownSection.appendTo($("#blog-"+data[i].blogId));
-                // $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
-                // $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'" style="display:none;"></div>')
-                // $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
             }
             $(".thumb-up-pre").hover((event) => {
                 event.currentTarget.textContent = "👍";
@@ -242,9 +239,6 @@ function initHot() {
                 $('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>').appendTo(slideDownSection);
                 $('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value, this)">send</button></div></div>').appendTo(slideDownSection);
                 slideDownSection.appendTo($("#blog-"+data[i].blogId));
-                // $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
-                // $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'" style="display:none;"></div>')
-                // $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
             }
             $(".thumb-up-pre").hover((event) => {
                 event.currentTarget.textContent = "👍";
@@ -309,9 +303,6 @@ function initMyBlog() {
                 $('<div class="message-section" id="message-section-'+data[i].blogId+'"></div>').appendTo(slideDownSection);
                 $('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value, this)">send</button></div></div>').appendTo(slideDownSection);
                 slideDownSection.appendTo($("#blog-"+data[i].blogId));
-                // $("#blog-"+data[i].blogId).append('<hr class="divide-line">')
-                // $("#blog-"+data[i].blogId).append('<div class="message-section" id="message-section-'+data[i].blogId+'" style="display:none;"></div>')
-                // $("#blog-"+data[i].blogId).append('<div class="input-group mb-3 message-input"><input type="text" class="form-control message-nickname message-align" placeholder="Nickname"><input type="text" class="form-control message-content" placeholder="Message" required><div class="input-group-append"><button class="btn btn-outline-secondary" type="button" onClick="postComment('+"'"+data[i].blogId+"'"+', this.parentNode.parentNode.children[0].value, this.parentNode.parentNode.children[1].value)">send</button></div></div>')
             }
             $(".thumb-up-pre").hover((event) => {
                 event.currentTarget.textContent = "👍";
